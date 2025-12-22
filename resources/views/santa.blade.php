@@ -115,27 +115,19 @@
         <div class="flex flex-col items-center w-full mt-auto">
             <div class="grid grid-cols-3 gap-x-8 gap-y-6 mb-8 w-full max-w-xs px-2">
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path></svg>
-                    </button>
+                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">mute</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="12" cy="20" r="2"/><circle cx="20" cy="20" r="2"/></svg>
-                    </button>
+                    <button class="call-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="white"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="12" cy="20" r="2"/><circle cx="20" cy="20" r="2"/></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">keypad</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                    </button>
+                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">speaker</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    </button>
+                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">add call</span>
                 </div>
                 <div class="flex flex-col items-center">
@@ -145,9 +137,7 @@
                     <span id="talk-label" class="text-white text-[10px] mt-1 font-medium">talk</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    </button>
+                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">contacts</span>
                 </div>
             </div>
@@ -168,7 +158,6 @@
     const talkBtn = document.getElementById('talk-btn');
     const talkLabel = document.getElementById('talk-label');
     const statusText = document.getElementById('status-text');
-    const subStatus = document.getElementById('sub-status');
     const listeningRing = document.getElementById('listening-ring');
     const avatarPulse = document.getElementById('avatar-pulse');
     const endCallBtn = document.getElementById('end-call');
@@ -181,7 +170,7 @@
     let conversationHistory = [];
     let callStartTime = null;
     let timerInterval = null;
-    let currentTranscript = ""; // Track everything heard so far
+    let currentHearsay = "";
 
     const santaVoice = new Audio();
     santaVoice.preload = "auto";
@@ -206,7 +195,9 @@
         }
     }
 
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    function initRecognition() {
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return;
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
         recognition.continuous = true;
@@ -215,7 +206,7 @@
 
         recognition.onstart = () => {
             isListening = true;
-            currentTranscript = "";
+            currentHearsay = "";
             listeningRing.style.display = 'block';
             avatarPulse.classList.add('listening-pulse');
             statusText.textContent = 'Listening...';
@@ -227,35 +218,46 @@
             let interim = "";
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
-                    currentTranscript += event.results[i][0].transcript;
+                    currentHearsay += event.results[i][0].transcript;
                 } else {
                     interim += event.results[i][0].transcript;
                 }
             }
-            // In a noisy room, always consider the interim part as valid "current" text
-            // so that if they hit "Done", we have the most recent data.
-            window.latestHearsay = currentTranscript + interim;
+            // Constantly update the hearsay so we never lose data
+            currentHearsay = currentHearsay + interim;
         };
 
         recognition.onerror = (e) => {
-            console.error("Speech Error", e);
-            if (isListening) stopListening();
+            console.error("Speech Recognition Error:", e.error);
+            // If it errors out, just restart it silently to stay ready
+            if (isListening) {
+                try { recognition.stop(); } catch(err) {}
+                setTimeout(() => { if(isListening) recognition.start(); }, 300);
+            }
+        };
+
+        recognition.onend = () => {
+            if (isListening && !isSantaSpeaking) {
+                try { recognition.start(); } catch(e) {}
+            }
         };
     }
 
+    initRecognition();
+
     function processFinalVoiceResult() {
-        // Stop recognition first
         isListening = false;
-        recognition.stop();
+        try { recognition.stop(); } catch(e) {}
 
-        const textToSend = window.latestHearsay || "";
+        const textToSend = currentHearsay.trim();
 
-        if (textToSend.trim().length > 0) {
+        if (textToSend.length > 2) { // Minimum 2 characters to avoid background noise blips
             conversationHistory.push({ role: 'user', content: textToSend });
             getSantaResponse();
         } else {
-            stopListening();
-            statusText.textContent = 'Try again';
+            // Safety: If it heard nothing, don't just say "Try Again" — restart listening
+            console.log("Nothing heard, restarting...");
+            startListening();
         }
     }
 
@@ -286,8 +288,13 @@
     });
 
     function startListening() {
-        window.latestHearsay = "";
-        if (recognition) recognition.start();
+        currentHearsay = "";
+        if (recognition) {
+            try { recognition.start(); } catch(e) {
+                // If it's already started or stuck, force it
+                try { recognition.stop(); setTimeout(() => recognition.start(), 200); } catch(err) {}
+            }
+        }
     }
 
     function stopListening() {
@@ -308,7 +315,6 @@
     }
 
     async function getSantaResponse() {
-        // Clear UI for thinking state
         listeningRing.style.display = 'none';
         avatarPulse.classList.remove('listening-pulse');
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
@@ -323,10 +329,7 @@
                 headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model: 'gpt-3.5-turbo',
-                    messages: [
-                        { role: 'system', content: `You are Santa. Warm, jolly, 2 sentences max. End with a question.` },
-                        ...conversationHistory
-                    ]
+                    messages: [{ role: 'system', content: `You are Santa. Warm, jolly, 2 sentences max. End with a question.` }, ...conversationHistory]
                 })
             });
 
@@ -348,7 +351,7 @@
             santaVoice.onended = () => {
                 isSantaSpeaking = false;
                 statusText.textContent = 'Your turn';
-                window.latestHearsay = "";
+                currentHearsay = "";
                 startListening();
                 URL.revokeObjectURL(audioUrl);
             };
