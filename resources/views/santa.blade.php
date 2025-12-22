@@ -10,9 +10,9 @@
             background: #000;
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
             overflow: hidden;
-            height: 100dvh; /* Uses dynamic height to account for mobile toolbars */
+            height: 100dvh;
             display: flex;
-            align-items: flex-start; /* Sit at the very top of the screen */
+            align-items: flex-start;
             justify-content: center;
         }
         .phone-container {
@@ -24,8 +24,8 @@
             overflow: hidden;
             width: 100%;
             max-width: 400px;
-            height: 98%; /* Leave tiny gap at bottom for the home bar */
-            margin-top: -10px; /* Use the negative space at the top */
+            height: 98%;
+            margin-top: -5px;
         }
         .status-bar {
             height: 44px;
@@ -44,25 +44,27 @@
             z-index: 50;
         }
         .call-btn {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
         }
+        .call-btn:active { background: rgba(255, 255, 255, 0.2); }
         .end-call-btn {
-            width: 64px;
-            height: 64px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             background: #FF3B30;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 15px rgba(255, 59, 48, 0.3);
         }
         .avatar-ring {
             animation: pulse-ring 2s ease-in-out infinite;
@@ -86,65 +88,74 @@
 
     <div class="status-bar flex items-center justify-between px-8 text-white text-xs font-semibold relative z-40">
         <div id="status-time" class="font-semibold">9:41</div>
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1.5">
             <svg class="w-4 h-4" fill="white" viewBox="0 0 24 24"><path d="M12.01 21.49L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7l11.63 14.49.01.01.01-.01z"/></svg>
-            <div class="w-6 h-3 border-2 border-white rounded-sm relative">
-                <div class="absolute inset-y-0 left-0 bg-white w-4 m-0.5"></div>
+            <div class="w-5 h-2.5 border border-white/50 rounded-sm relative">
+                <div class="absolute inset-y-0 left-0 bg-white w-3 m-0.5"></div>
             </div>
         </div>
     </div>
 
-    <div class="flex flex-col items-center h-full pt-4 pb-32 px-6">
+    <div class="flex flex-col items-center h-full pt-6 pb-28 px-6">
         <div class="text-center mt-2">
             <h1 class="text-white text-3xl font-normal tracking-tight">Santa Claus</h1>
-            <p class="text-gray-400 text-base">mobile</p>
-            <div class="text-gray-400 text-base mt-1" id="call-timer">00:00</div>
+            <p id="call-timer" class="text-gray-400 text-base mt-1">00:00</p>
         </div>
 
-        <div class="relative my-4">
+        <div class="relative my-8">
             <div id="listening-ring" class="absolute inset-0 rounded-full bg-green-500 opacity-20 avatar-ring" style="display: none;"></div>
-            <div id="avatar-pulse" class="w-32 h-32 rounded-full flex items-center justify-center text-6xl" style="background: linear-gradient(135deg, #E53E3E 0%, #C53030 100%);">
+            <div id="avatar-pulse" class="w-36 h-36 rounded-full flex items-center justify-center text-7xl shadow-2xl" style="background: linear-gradient(135deg, #E53E3E 0%, #C53030 100%);">
                 🎅
             </div>
         </div>
 
         <div class="text-center mb-4">
             <p id="status-text" class="text-white text-base font-normal mb-1">Tap Talk to Start</p>
-            <p id="sub-status" class="text-gray-400 text-sm">North Pole, Arctic</p>
+            <p id="sub-status" class="text-gray-500 text-sm">mobile</p>
         </div>
 
-        <div class="flex flex-col items-center w-full mt-auto mb-10">
-            <div class="grid grid-cols-3 gap-x-8 gap-y-6 mb-8 w-full max-w-xs px-4">
+        <div class="flex flex-col items-center w-full mt-auto mb-6">
+            <div class="grid grid-cols-3 gap-x-10 gap-y-8 mb-12 w-full max-w-xs px-4">
                 <div class="flex flex-col items-center">
-                    <button class="call-btn"><span class="text-white text-xl">🔇</span></button>
-                    <span class="text-white text-[10px] mt-1">mute</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <button class="call-btn"><span class="text-white text-xl">⌨️</span></button>
-                    <span class="text-white text-[10px] mt-1">keypad</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <button class="call-btn"><span class="text-white text-xl">🔊</span></button>
-                    <span class="text-white text-[10px] mt-1">speaker</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <button class="call-btn"><span class="text-white text-xl">➕</span></button>
-                    <span class="text-white text-[10px] mt-1">add</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <button id="talk-btn" class="call-btn bg-green-600">
-                        <span class="text-white text-xl">🎤</span>
+                    <button class="call-btn">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
                     </button>
-                    <span class="text-white text-[10px] mt-1">talk</span>
+                    <span class="text-white text-[11px] mt-2 font-medium">mute</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn"><span class="text-white text-xl">👤</span></button>
-                    <span class="text-white text-[10px] mt-1">contacts</span>
+                    <button class="call-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><circle cx="4" cy="4" r="2.5"/><circle cx="12" cy="4" r="2.5"/><circle cx="20" cy="4" r="2.5"/><circle cx="4" cy="12" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="20" cy="12" r="2.5"/><circle cx="4" cy="20" r="2.5"/><circle cx="12" cy="20" r="2.5"/><circle cx="20" cy="20" r="2.5"/></svg>
+                    </button>
+                    <span class="text-white text-[11px] mt-2 font-medium">keypad</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <button class="call-btn">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    </button>
+                    <span class="text-white text-[11px] mt-2 font-medium">speaker</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <button class="call-btn">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                    <span class="text-white text-[11px] mt-2 font-medium">add call</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <button id="talk-btn" class="call-btn bg-green-600 border-none">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                    </button>
+                    <span class="text-white text-[11px] mt-2 font-medium">talk</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <button class="call-btn">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </button>
+                    <span class="text-white text-[11px] mt-2 font-medium">contacts</span>
                 </div>
             </div>
 
             <button id="end-call" class="end-call-btn">
-                <svg class="w-7 h-7" fill="white" viewBox="0 0 24 24" transform="rotate(135)">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" transform="rotate(135)">
                     <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
                 </svg>
             </button>
@@ -173,10 +184,9 @@
     let callStartTime = null;
     let timerInterval = null;
 
-    // Fixed Audio context for mobile browsers
     const unlockAudio = () => {
         const dummy = new Audio();
-        dummy.play().then(() => dummy.pause());
+        dummy.play().then(() => dummy.pause()).catch(() => {});
         document.removeEventListener('click', unlockAudio);
     };
     document.addEventListener('click', unlockAudio);
