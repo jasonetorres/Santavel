@@ -164,6 +164,7 @@
     let callStartTime = null;
     let timerInterval = null;
     let mediaStream = null;
+    let recordingStartTime = null;
 
     const santaVoice = new Audio();
     santaVoice.preload = "auto";
@@ -217,9 +218,13 @@
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
         talkLabel.textContent = 'hold';
 
-        if (audioChunks.length === 0) {
+        const recordingDuration = Date.now() - recordingStartTime;
+        console.log('Recording duration:', recordingDuration, 'ms, chunks:', audioChunks.length);
+
+        if (audioChunks.length === 0 || recordingDuration < 500) {
             statusText.textContent = 'Hold to Talk';
-            subStatus.textContent = "No audio recorded";
+            subStatus.textContent = recordingDuration < 500 ? "Hold longer!" : "No audio recorded";
+            audioChunks = [];
             return;
         }
 
@@ -228,7 +233,14 @@
 
         try {
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            console.log('Audio blob size:', audioBlob.size, 'bytes');
             audioChunks = [];
+
+            if (audioBlob.size < 1000) {
+                statusText.textContent = 'Hold to Talk';
+                subStatus.textContent = "Audio too short - hold longer!";
+                return;
+            }
 
             const formData = new FormData();
             formData.append('file', audioBlob, 'audio.webm');
@@ -282,11 +294,14 @@
 
     function startRecording() {
         audioChunks = [];
+        recordingStartTime = Date.now();
+
         mediaRecorder = new MediaRecorder(mediaStream);
 
         mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
                 audioChunks.push(event.data);
+                console.log('Chunk captured:', event.data.size, 'bytes');
             }
         };
 
@@ -294,7 +309,7 @@
             processRecordedAudio();
         };
 
-        mediaRecorder.start();
+        mediaRecorder.start(100);
         isRecording = true;
         avatarPulse.classList.add('listening-pulse');
         statusText.textContent = 'Listening...';
