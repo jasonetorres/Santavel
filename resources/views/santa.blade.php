@@ -100,8 +100,8 @@
         </div>
 
         <div class="text-center mb-2">
-            <p id="status-text" class="text-white text-base font-normal">Tap Talk to Start</p>
-            <p id="sub-status" class="text-gray-500 text-[10px] italic">Ready</p>
+            <p id="status-text" class="text-white text-base font-normal">Hold to Talk</p>
+            <p id="sub-status" class="text-gray-500 text-[10px] italic">Press and hold the green button</p>
         </div>
 
         <div class="flex flex-col items-center w-full mt-auto">
@@ -126,7 +126,7 @@
                     <button id="talk-btn" class="call-btn bg-green-600 border-none">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
                     </button>
-                    <span id="talk-label" class="text-white text-[10px] mt-1 font-medium">talk</span>
+                    <span id="talk-label" class="text-white text-[10px] mt-1 font-medium">hold</span>
                 </div>
                 <div class="flex flex-col items-center">
                     <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
@@ -204,13 +204,11 @@
 
         recognition.onstart = () => {
             isListening = true;
-            if (!window.latestCapturedText) {
-                window.latestCapturedText = "";
-            }
+            window.latestCapturedText = "";
             avatarPulse.classList.add('listening-pulse');
             statusText.textContent = 'Listening...';
             talkBtn.classList.replace('bg-green-600', 'bg-red-600');
-            talkLabel.textContent = 'done';
+            talkLabel.textContent = 'release';
             subStatus.textContent = "Listening...";
         };
 
@@ -225,21 +223,11 @@
 
         recognition.onerror = (e) => {
             console.log("Recognition error:", e.error);
-            if (isListening && e.error !== 'aborted') {
-                try { recognition.abort(); } catch(err) {}
-                setTimeout(() => { if(isListening) recognition.start(); }, 300);
-            }
         };
 
         recognition.onend = () => {
-            if (isListening && !isSantaSpeaking) {
-                setTimeout(() => {
-                    if (isListening && !isSantaSpeaking) {
-                        try { recognition.start(); } catch(e) {
-                            console.log('Auto-restart failed:', e);
-                        }
-                    }
-                }, 100);
+            if (isListening) {
+                processFinalVoiceResult();
             }
         };
     }
@@ -250,7 +238,7 @@
         isListening = false;
         avatarPulse.classList.remove('listening-pulse');
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
-        talkLabel.textContent = 'talk';
+        talkLabel.textContent = 'hold';
 
         try { recognition.abort(); } catch(e) {}
 
@@ -260,30 +248,70 @@
             conversationHistory.push({ role: 'user', content: textToSend });
             getSantaResponse();
         } else {
-            statusText.textContent = 'Ready';
+            statusText.textContent = 'Hold to Talk';
             subStatus.textContent = "Nothing heard, try again!";
         }
     }
 
-    talkBtn.addEventListener('click', () => {
+    const startTalking = () => {
         primeAudio();
         if (!callStartTime) {
             callStartTime = Date.now();
             timerInterval = setInterval(updateCallTimer, 1000);
         }
-        if (isListening) processFinalVoiceResult();
-        else if (!isSantaSpeaking) startListening();
+        if (!isSantaSpeaking && !isListening) {
+            startListening();
+        }
+    };
+
+    const stopTalking = () => {
+        if (isListening) {
+            try { recognition.stop(); } catch(e) {}
+        }
+    };
+
+    talkBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startTalking();
+    });
+
+    talkBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        stopTalking();
+    });
+
+    talkBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        startTalking();
+    });
+
+    talkBtn.addEventListener('mouseup', (e) => {
+        e.preventDefault();
+        stopTalking();
+    });
+
+    talkBtn.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        stopTalking();
+    });
+
+    talkBtn.addEventListener('mouseleave', () => {
+        if (isListening) {
+            stopTalking();
+        }
     });
 
     endCallBtn.addEventListener('click', () => {
         stopEverything();
         clearInterval(timerInterval);
         statusText.textContent = 'Call Ended';
+        subStatus.textContent = 'Goodbye!';
         setTimeout(() => {
             conversationHistory = [];
             callStartTime = null;
             callTimer.textContent = '00:00';
-            statusText.textContent = 'Tap Talk to Start';
+            statusText.textContent = 'Hold to Talk';
+            subStatus.textContent = 'Press and hold the green button';
         }, 3000);
     });
 
@@ -308,9 +336,9 @@
         isListening = false;
         avatarPulse.classList.remove('listening-pulse');
         if (recognition) { try { recognition.abort(); } catch(e) {} }
-        statusText.textContent = 'Ready';
+        statusText.textContent = 'Hold to Talk';
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
-        talkLabel.textContent = 'talk';
+        talkLabel.textContent = 'hold';
     }
 
     function stopEverything() {
@@ -352,9 +380,8 @@
             santaVoice.onended = () => {
                 isSantaSpeaking = false;
                 URL.revokeObjectURL(audioUrl);
-                setTimeout(() => {
-                    startListening();
-                }, 300);
+                statusText.textContent = 'Hold to Talk';
+                subStatus.textContent = 'Ready for your reply';
             };
 
             santaVoice.play().then(() => {
