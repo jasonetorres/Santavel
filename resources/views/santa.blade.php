@@ -233,7 +233,13 @@
 
         recognition.onend = () => {
             if (isListening && !isSantaSpeaking) {
-                try { recognition.start(); } catch(e) {}
+                setTimeout(() => {
+                    if (isListening && !isSantaSpeaking) {
+                        try { recognition.start(); } catch(e) {
+                            console.log('Auto-restart failed:', e);
+                        }
+                    }
+                }, 100);
             }
         };
     }
@@ -284,9 +290,17 @@
     function startListening() {
         window.latestCapturedText = "";
         if (recognition) {
-            try { recognition.start(); } catch(e) {
-                try { recognition.abort(); setTimeout(() => recognition.start(), 200); } catch(err) {}
-            }
+            try {
+                recognition.abort();
+            } catch(e) {}
+
+            setTimeout(() => {
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.log('Start failed, retrying:', e);
+                }
+            }, 100);
         }
     }
 
@@ -337,10 +351,10 @@
 
             santaVoice.onended = () => {
                 isSantaSpeaking = false;
-                statusText.textContent = 'Your turn';
-                window.latestCapturedText = "";
-                startListening();
                 URL.revokeObjectURL(audioUrl);
+                setTimeout(() => {
+                    startListening();
+                }, 300);
             };
 
             santaVoice.play().then(() => {
