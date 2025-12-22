@@ -218,13 +218,9 @@
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
         talkLabel.textContent = 'hold';
 
-        const recordingDuration = Date.now() - recordingStartTime;
-        console.log('Recording duration:', recordingDuration, 'ms, chunks:', audioChunks.length);
-
-        if (audioChunks.length === 0 || recordingDuration < 500) {
+        if (audioChunks.length === 0) {
             statusText.textContent = 'Hold to Talk';
-            subStatus.textContent = recordingDuration < 500 ? "Hold longer!" : "No audio recorded";
-            audioChunks = [];
+            subStatus.textContent = "No audio recorded";
             return;
         }
 
@@ -232,18 +228,12 @@
         subStatus.textContent = 'Transcribing audio...';
 
         try {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            console.log('Audio blob size:', audioBlob.size, 'bytes');
+            const mimeType = audioChunks[0].type || 'audio/webm';
+            const audioBlob = new Blob(audioChunks, { type: mimeType });
             audioChunks = [];
 
-            if (audioBlob.size < 1000) {
-                statusText.textContent = 'Hold to Talk';
-                subStatus.textContent = "Audio too short - hold longer!";
-                return;
-            }
-
             const formData = new FormData();
-            formData.append('file', audioBlob, 'audio.webm');
+            formData.append('file', audioBlob, 'audio.' + (mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm'));
             formData.append('model', 'whisper-1');
 
             const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -296,17 +286,27 @@
         audioChunks = [];
         recordingStartTime = Date.now();
 
-        mediaRecorder = new MediaRecorder(mediaStream);
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' :
+                        MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' :
+                        MediaRecorder.isTypeSupported('audio/ogg') ? 'audio/ogg' : '';
+
+        mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : {});
 
         mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
                 audioChunks.push(event.data);
-                console.log('Chunk captured:', event.data.size, 'bytes');
             }
         };
 
         mediaRecorder.onstop = () => {
             processRecordedAudio();
+        };
+
+        mediaRecorder.onerror = (e) => {
+            console.error('MediaRecorder error:', e);
+            statusText.textContent = 'Error';
+            subStatus.textContent = 'Recording failed';
+            isRecording = false;
         };
 
         mediaRecorder.start(100);
