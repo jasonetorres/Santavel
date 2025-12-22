@@ -101,33 +101,25 @@
 
         <div class="text-center mb-2">
             <p id="status-text" class="text-white text-base font-normal">Tap Talk to Start</p>
-            <p id="sub-status" class="text-gray-500 text-xs italic">Awaiting voice...</p>
+            <p id="sub-status" class="text-gray-500 text-[10px] italic">Ready</p>
         </div>
 
         <div class="flex flex-col items-center w-full mt-auto">
             <div class="grid grid-cols-3 gap-x-8 gap-y-6 mb-8 w-full max-w-xs px-2">
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path></svg>
-                    </button>
+                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">mute</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="12" cy="20" r="2"/><circle cx="20" cy="20" r="2"/></svg>
-                    </button>
+                    <button class="call-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="white"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="12" cy="20" r="2"/><circle cx="20" cy="20" r="2"/></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">keypad</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                    </button>
+                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">speaker</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    </button>
+                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">add call</span>
                 </div>
                 <div class="flex flex-col items-center">
@@ -137,9 +129,7 @@
                     <span id="talk-label" class="text-white text-[10px] mt-1 font-medium">talk</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    </button>
+                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">contacts</span>
                 </div>
             </div>
@@ -163,6 +153,7 @@
     const subStatus = document.getElementById('sub-status');
     const avatarPulse = document.getElementById('avatar-pulse');
     const callTimer = document.getElementById('call-timer');
+    const statusTime = document.getElementById('status-time');
 
     let recognition;
     let isListening = false;
@@ -170,18 +161,30 @@
     let conversationHistory = [];
     let callStartTime = null;
     let timerInterval = null;
+    let currentHearsay = "";
 
     const santaVoice = new Audio();
     santaVoice.preload = "auto";
 
-    const unlock = () => {
+    const primeAudio = () => {
         santaVoice.play().then(() => {
             santaVoice.pause();
             santaVoice.currentTime = 0;
         }).catch(() => {});
-        document.removeEventListener('touchstart', unlock);
     };
-    document.addEventListener('touchstart', unlock);
+
+    function updateStatusTime() {
+        const now = new Date();
+        statusTime.textContent = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+    }
+    updateStatusTime();
+
+    function updateCallTimer() {
+        if (callStartTime) {
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            callTimer.textContent = `${Math.floor(elapsed / 60).toString().padStart(2, '0')}:${(elapsed % 60).toString().padStart(2, '0')}`;
+        }
+    }
 
     function initRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -194,36 +197,44 @@
 
         recognition.onstart = () => {
             isListening = true;
+            currentHearsay = "";
+            window.latestCapturedText = "";
             avatarPulse.classList.add('listening-pulse');
             statusText.textContent = 'Listening...';
             talkBtn.classList.replace('bg-green-600', 'bg-red-600');
             talkLabel.textContent = 'done';
-            subStatus.textContent = "Listening for your voice...";
-            window.lastWords = "";
+            subStatus.textContent = "Listening...";
         };
 
         recognition.onresult = (event) => {
+            let final = "";
             let interim = "";
-            let currentFull = "";
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) currentFull += event.results[i][0].transcript;
+                if (event.results[i].isFinal) final += event.results[i][0].transcript;
                 else interim += event.results[i][0].transcript;
             }
-            window.lastWords = currentFull + interim;
-            subStatus.textContent = "Heard: " + window.lastWords.split(" ").slice(-4).join(" ");
+            window.latestCapturedText = final + interim;
+            subStatus.textContent = "Heard: " + window.latestCapturedText.split(" ").slice(-3).join(" ");
         };
 
-        recognition.onerror = () => {
-            if (isListening) {
-                try { recognition.abort(); } catch(e) {}
+        recognition.onerror = (e) => {
+            console.log("Recognition error:", e.error);
+            if (isListening && e.error !== 'aborted') {
+                try { recognition.abort(); } catch(err) {}
                 setTimeout(() => { if(isListening) recognition.start(); }, 300);
+            }
+        };
+
+        recognition.onend = () => {
+            if (isListening && !isSantaSpeaking) {
+                try { recognition.start(); } catch(e) {}
             }
         };
     }
 
     initRecognition();
 
-    function sendToSanta() {
+    function processFinalVoiceResult() {
         isListening = false;
         avatarPulse.classList.remove('listening-pulse');
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
@@ -231,10 +242,10 @@
 
         try { recognition.abort(); } catch(e) {}
 
-        const finalMessage = (window.lastWords || "").trim();
+        const textToSend = (window.latestCapturedText || "").trim();
 
-        if (finalMessage.length > 1) {
-            conversationHistory.push({ role: 'user', content: finalMessage });
+        if (textToSend.length > 1) {
+            conversationHistory.push({ role: 'user', content: textToSend });
             getSantaResponse();
         } else {
             statusText.textContent = 'Ready';
@@ -243,24 +254,56 @@
     }
 
     talkBtn.addEventListener('click', () => {
+        primeAudio();
         if (!callStartTime) {
             callStartTime = Date.now();
-            setInterval(() => {
-                const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
-                callTimer.textContent = `${Math.floor(elapsed / 60).toString().padStart(2, '0')}:${(elapsed % 60).toString().padStart(2, '0')}`;
-            }, 1000);
+            timerInterval = setInterval(updateCallTimer, 1000);
         }
-        if (isListening) sendToSanta();
-        else if (!isSantaSpeaking) {
-            window.lastWords = "";
-            recognition.start();
-        }
+        if (isListening) processFinalVoiceResult();
+        else if (!isSantaSpeaking) startListening();
     });
+
+    endCallBtn.addEventListener('click', () => {
+        stopEverything();
+        clearInterval(timerInterval);
+        statusText.textContent = 'Call Ended';
+        setTimeout(() => {
+            conversationHistory = [];
+            callStartTime = null;
+            callTimer.textContent = '00:00';
+            statusText.textContent = 'Tap Talk to Start';
+        }, 3000);
+    });
+
+    function startListening() {
+        window.latestCapturedText = "";
+        if (recognition) {
+            try { recognition.start(); } catch(e) {
+                try { recognition.abort(); setTimeout(() => recognition.start(), 200); } catch(err) {}
+            }
+        }
+    }
+
+    function stopListening() {
+        isListening = false;
+        avatarPulse.classList.remove('listening-pulse');
+        if (recognition) { try { recognition.abort(); } catch(e) {} }
+        statusText.textContent = 'Ready';
+        talkBtn.classList.replace('bg-red-600', 'bg-green-600');
+        talkLabel.textContent = 'talk';
+    }
+
+    function stopEverything() {
+        stopListening();
+        isSantaSpeaking = false;
+        santaVoice.pause();
+        santaVoice.currentTime = 0;
+    }
 
     async function getSantaResponse() {
         isSantaSpeaking = true;
         statusText.textContent = 'Santa thinking...';
-        subStatus.textContent = "Ho ho ho...";
+        subStatus.textContent = "Checking list...";
 
         try {
             const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -283,14 +326,20 @@
             });
 
             const audioBlob = await voiceResponse.blob();
-            santaVoice.src = URL.createObjectURL(audioBlob);
+            const audioUrl = URL.createObjectURL(audioBlob);
+            santaVoice.src = audioUrl;
+
             santaVoice.onended = () => {
                 isSantaSpeaking = false;
                 statusText.textContent = 'Your turn';
-                window.lastWords = "";
-                recognition.start();
+                window.latestCapturedText = "";
+                startListening();
+                URL.revokeObjectURL(audioUrl);
             };
-            santaVoice.play().then(() => statusText.textContent = 'Santa speaking').catch(() => {
+
+            santaVoice.play().then(() => {
+                statusText.textContent = 'Santa speaking';
+            }).catch(() => {
                 statusText.textContent = 'Tap to Listen';
                 window.addEventListener('touchstart', () => santaVoice.play(), {once: true});
             });
@@ -299,8 +348,6 @@
             statusText.textContent = 'Error';
         }
     }
-
-    document.getElementById('end-call').onclick = () => location.reload();
 </script>
 </body>
 </html>
