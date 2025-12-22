@@ -24,7 +24,7 @@
             overflow: hidden;
             width: 100%;
             max-width: 400px;
-            height: 96%; /* Slightly shorter to guarantee fit */
+            height: 96%;
             margin-top: -15px;
         }
         .status-bar {
@@ -182,12 +182,17 @@
     let callStartTime = null;
     let timerInterval = null;
 
-    const unlockAudio = () => {
-        const dummy = new Audio();
-        dummy.play().then(() => dummy.pause()).catch(() => {});
-        document.removeEventListener('click', unlockAudio);
+    // CRITICAL MOBILE FIX: Prime the audio engine on first interaction
+    let audioContextPrimed = false;
+    const primeAudio = () => {
+        if (audioContextPrimed) return;
+        // Create an empty, silent audio buffer and play it immediately
+        const audio = new Audio();
+        audio.play().then(() => {
+            audioContextPrimed = true;
+            console.log("Audio Engine Primed for Mobile");
+        }).catch(() => {});
     };
-    document.addEventListener('click', unlockAudio);
 
     function updateStatusTime() {
         const now = new Date();
@@ -226,6 +231,7 @@
     }
 
     talkBtn.addEventListener('click', () => {
+        primeAudio(); // Attempt to prime audio every time Talk is pressed
         if (!callStartTime) {
             callStartTime = Date.now();
             timerInterval = setInterval(updateCallTimer, 1000);
@@ -288,14 +294,27 @@
             });
 
             const audioBlob = await voiceResponse.blob();
-            currentAudio = new Audio(URL.createObjectURL(audioBlob));
+            const audioUrl = URL.createObjectURL(audioBlob);
+            currentAudio = new Audio(audioUrl);
+
             currentAudio.onended = () => {
                 isSantaSpeaking = false;
                 statusText.textContent = 'Your turn';
                 startListening();
             };
-            currentAudio.play();
-            statusText.textContent = 'Santa speaking';
+
+            // Force play and catch errors for mobile debugging
+            const playPromise = currentAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    statusText.textContent = 'Santa speaking';
+                }).catch(error => {
+                    console.error("Playback failed:", error);
+                    statusText.textContent = 'Tap to Unmute';
+                    // Fallback for strict browsers: play on next tap
+                    window.addEventListener('touchstart', () => currentAudio.play(), {once: true});
+                });
+            }
         } catch (e) {
             isSantaSpeaking = false;
             statusText.textContent = 'Error';
