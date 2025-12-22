@@ -181,7 +181,7 @@
     let conversationHistory = [];
     let callStartTime = null;
     let timerInterval = null;
-    let lastTranscript = "";
+    let currentTranscript = ""; // Track everything heard so far
 
     const santaVoice = new Audio();
     santaVoice.preload = "auto";
@@ -209,48 +209,54 @@
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
-        recognition.continuous = true; // Changed to true to keep it alive in noise
+        recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
         recognition.onstart = () => {
             isListening = true;
+            currentTranscript = "";
             listeningRing.style.display = 'block';
             avatarPulse.classList.add('listening-pulse');
             statusText.textContent = 'Listening...';
             talkBtn.classList.replace('bg-green-600', 'bg-red-600');
-            talkLabel.textContent = 'done'; // Visual cue for noise fallback
+            talkLabel.textContent = 'done';
         };
 
         recognition.onresult = (event) => {
-            // Keep track of what we hear
+            let interim = "";
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
-                    lastTranscript = event.results[i][0].transcript;
-                    // If room is quiet, it will trigger naturally here
-                    processVoiceResult(lastTranscript);
+                    currentTranscript += event.results[i][0].transcript;
                 } else {
-                    // Interim results can go here if needed
-                    lastTranscript = event.results[i][0].transcript;
+                    interim += event.results[i][0].transcript;
                 }
             }
+            // In a noisy room, always consider the interim part as valid "current" text
+            // so that if they hit "Done", we have the most recent data.
+            window.latestHearsay = currentTranscript + interim;
         };
 
         recognition.onerror = (e) => {
             console.error("Speech Error", e);
             if (isListening) stopListening();
         };
-
-        recognition.onend = () => {
-            // Only restart if we didn't explicitly stop to process
-            if (isListening && !isSantaSpeaking) recognition.start();
-        };
     }
 
-    function processVoiceResult(text) {
-        if (!text || !isListening) return;
-        conversationHistory.push({ role: 'user', content: text });
-        getSantaResponse();
+    function processFinalVoiceResult() {
+        // Stop recognition first
+        isListening = false;
+        recognition.stop();
+
+        const textToSend = window.latestHearsay || "";
+
+        if (textToSend.trim().length > 0) {
+            conversationHistory.push({ role: 'user', content: textToSend });
+            getSantaResponse();
+        } else {
+            stopListening();
+            statusText.textContent = 'Try again';
+        }
     }
 
     talkBtn.addEventListener('click', () => {
@@ -261,13 +267,8 @@
         }
 
         if (isListening) {
-            // NOISE FALLBACK: Manual stop triggers processing of whatever was heard last
-            if (lastTranscript) {
-                processVoiceResult(lastTranscript);
-            } else {
-                stopListening();
-            }
-        } else {
+            processFinalVoiceResult();
+        } else if (!isSantaSpeaking) {
             startListening();
         }
     });
@@ -285,15 +286,15 @@
     });
 
     function startListening() {
-        lastTranscript = "";
-        if (recognition && !isSantaSpeaking) recognition.start();
+        window.latestHearsay = "";
+        if (recognition) recognition.start();
     }
 
     function stopListening() {
         isListening = false;
         listeningRing.style.display = 'none';
         avatarPulse.classList.remove('listening-pulse');
-        if (recognition) { try { recognition.abort(); } catch(e) {} }
+        if (recognition) { try { recognition.stop(); } catch(e) {} }
         statusText.textContent = 'Ready';
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
         talkLabel.textContent = 'talk';
@@ -307,7 +308,12 @@
     }
 
     async function getSantaResponse() {
-        stopListening();
+        // Clear UI for thinking state
+        listeningRing.style.display = 'none';
+        avatarPulse.classList.remove('listening-pulse');
+        talkBtn.classList.replace('bg-red-600', 'bg-green-600');
+        talkLabel.textContent = 'talk';
+
         isSantaSpeaking = true;
         statusText.textContent = 'Santa thinking...';
 
@@ -317,7 +323,10 @@
                 headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model: 'gpt-3.5-turbo',
-                    messages: [{ role: 'system', content: `You are Santa. Warm, jolly, 2 sentences max. End with a question.` }, ...conversationHistory.length > 0 ? conversationHistory : [{ role: 'user', content: 'Hello!' }]]
+                    messages: [
+                        { role: 'system', content: `You are Santa. Warm, jolly, 2 sentences max. End with a question.` },
+                        ...conversationHistory
+                    ]
                 })
             });
 
@@ -339,7 +348,7 @@
             santaVoice.onended = () => {
                 isSantaSpeaking = false;
                 statusText.textContent = 'Your turn';
-                lastTranscript = ""; // Reset for next turn
+                window.latestHearsay = "";
                 startListening();
                 URL.revokeObjectURL(audioUrl);
             };
