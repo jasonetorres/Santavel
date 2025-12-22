@@ -181,12 +181,7 @@
         }
     };
 
-    document.addEventListener('touchstart', () => {
-        primeAudio();
-        if (!mediaStream) {
-            initMicrophone();
-        }
-    }, { once: true });
+    document.addEventListener('touchstart', primeAudio, { once: true });
 
     function updateStatusTime() {
         const now = new Date();
@@ -201,14 +196,44 @@
         }
     }
 
+    function cleanupMediaRecorder() {
+        if (mediaRecorder) {
+            try {
+                if (mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+            } catch (e) {
+                console.error('Cleanup error:', e);
+            }
+            mediaRecorder = null;
+        }
+
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+            mediaStream = null;
+        }
+    }
+
     async function initMicrophone() {
         try {
-            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 44100
+                }
+            });
             statusText.textContent = 'Hold to Talk';
             subStatus.textContent = 'Microphone ready!';
+            return true;
         } catch (error) {
+            console.error('Microphone init error:', error);
             statusText.textContent = 'Mic Access Needed';
             subStatus.textContent = 'Please allow microphone access';
+            return false;
         }
     }
 
@@ -217,6 +242,8 @@
         avatarPulse.classList.remove('listening-pulse');
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
         talkLabel.textContent = 'hold';
+
+        cleanupMediaRecorder();
 
         if (audioChunks.length === 0) {
             statusText.textContent = 'Hold to Talk';
@@ -266,14 +293,12 @@
             timerInterval = setInterval(updateCallTimer, 1000);
         }
 
-        if (!mediaStream) {
-            await initMicrophone();
-            if (!mediaStream) return;
-        }
+        if (isSantaSpeaking || isRecording) return;
 
-        if (!isSantaSpeaking && !isRecording) {
-            startRecording();
-        }
+        const success = await initMicrophone();
+        if (!success) return;
+
+        startRecording();
     };
 
     const stopTalking = () => {
@@ -284,38 +309,56 @@
 
     function startRecording() {
         audioChunks = [];
-        recordingStartTime = Date.now();
+
+        if (mediaRecorder) {
+            try {
+                if (mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+            } catch (e) {
+                console.error('Error stopping old recorder:', e);
+            }
+            mediaRecorder = null;
+        }
 
         const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' :
                         MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' :
                         MediaRecorder.isTypeSupported('audio/ogg') ? 'audio/ogg' : '';
 
-        mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : {});
+        try {
+            mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : {});
 
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                audioChunks.push(event.data);
-            }
-        };
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
 
-        mediaRecorder.onstop = () => {
-            processRecordedAudio();
-        };
+            mediaRecorder.onstop = () => {
+                processRecordedAudio();
+            };
 
-        mediaRecorder.onerror = (e) => {
-            console.error('MediaRecorder error:', e);
-            statusText.textContent = 'Error';
-            subStatus.textContent = 'Recording failed';
-            isRecording = false;
-        };
+            mediaRecorder.onerror = (e) => {
+                console.error('MediaRecorder error:', e);
+                statusText.textContent = 'Error';
+                subStatus.textContent = 'Recording failed';
+                isRecording = false;
+                cleanupMediaRecorder();
+            };
 
-        mediaRecorder.start(100);
-        isRecording = true;
-        avatarPulse.classList.add('listening-pulse');
-        statusText.textContent = 'Listening...';
-        talkBtn.classList.replace('bg-green-600', 'bg-red-600');
-        talkLabel.textContent = 'release';
-        subStatus.textContent = "Recording...";
+            mediaRecorder.start(100);
+            isRecording = true;
+            avatarPulse.classList.add('listening-pulse');
+            statusText.textContent = 'Listening...';
+            talkBtn.classList.replace('bg-green-600', 'bg-red-600');
+            talkLabel.textContent = 'release';
+            subStatus.textContent = "Recording...";
+        } catch (error) {
+            console.error('Error starting recorder:', error);
+            statusText.textContent = 'Hold to Talk';
+            subStatus.textContent = 'Error starting recorder';
+            cleanupMediaRecorder();
+        }
     }
 
     talkBtn.addEventListener('touchstart', (e) => {
@@ -375,11 +418,15 @@
     }
 
     function stopEverything() {
-        stopRecording();
+        cleanupMediaRecorder();
+        isRecording = false;
         isSantaSpeaking = false;
         santaVoice.pause();
         santaVoice.currentTime = 0;
         audioChunks = [];
+        avatarPulse.classList.remove('listening-pulse');
+        talkBtn.classList.replace('bg-red-600', 'bg-green-600');
+        talkLabel.textContent = 'hold';
     }
 
     async function getSantaResponse() {
