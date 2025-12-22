@@ -142,7 +142,7 @@
                     <button id="talk-btn" class="call-btn bg-green-600 border-none">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
                     </button>
-                    <span class="text-white text-[10px] mt-1 font-medium">talk</span>
+                    <span id="talk-label" class="text-white text-[10px] mt-1 font-medium">talk</span>
                 </div>
                 <div class="flex flex-col items-center">
                     <button class="call-btn">
@@ -166,6 +166,7 @@
     const ELEVENLABS_API_KEY = '{{ env('ELEVENLABS_API_KEY') }}';
 
     const talkBtn = document.getElementById('talk-btn');
+    const talkLabel = document.getElementById('talk-label');
     const statusText = document.getElementById('status-text');
     const subStatus = document.getElementById('sub-status');
     const listeningRing = document.getElementById('listening-ring');
@@ -180,18 +181,16 @@
     let conversationHistory = [];
     let callStartTime = null;
     let timerInterval = null;
+    let lastTranscript = "";
 
-    // GLOBAL AUDIO PLAYER (Persistence Fix)
     const santaVoice = new Audio();
     santaVoice.preload = "auto";
 
-    // "Prime" function to unlock the global audio object
     const primeAudio = () => {
         santaVoice.play().then(() => {
             santaVoice.pause();
             santaVoice.currentTime = 0;
-            console.log("Global Audio Player Unlocked");
-        }).catch(e => console.log("Audio unlock pending interaction"));
+        }).catch(() => {});
     };
 
     function updateStatusTime() {
@@ -210,7 +209,8 @@
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
-        recognition.continuous = false;
+        recognition.continuous = true; // Changed to true to keep it alive in noise
+        recognition.interimResults = true;
         recognition.lang = 'en-US';
 
         recognition.onstart = () => {
@@ -219,24 +219,57 @@
             avatarPulse.classList.add('listening-pulse');
             statusText.textContent = 'Listening...';
             talkBtn.classList.replace('bg-green-600', 'bg-red-600');
+            talkLabel.textContent = 'done'; // Visual cue for noise fallback
         };
 
         recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            conversationHistory.push({ role: 'user', content: transcript });
-            getSantaResponse();
+            // Keep track of what we hear
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    lastTranscript = event.results[i][0].transcript;
+                    // If room is quiet, it will trigger naturally here
+                    processVoiceResult(lastTranscript);
+                } else {
+                    // Interim results can go here if needed
+                    lastTranscript = event.results[i][0].transcript;
+                }
+            }
         };
 
-        recognition.onend = () => { if (isListening && !isSantaSpeaking) recognition.start(); };
+        recognition.onerror = (e) => {
+            console.error("Speech Error", e);
+            if (isListening) stopListening();
+        };
+
+        recognition.onend = () => {
+            // Only restart if we didn't explicitly stop to process
+            if (isListening && !isSantaSpeaking) recognition.start();
+        };
+    }
+
+    function processVoiceResult(text) {
+        if (!text || !isListening) return;
+        conversationHistory.push({ role: 'user', content: text });
+        getSantaResponse();
     }
 
     talkBtn.addEventListener('click', () => {
-        primeAudio(); // Critical: Must happen inside the click event
+        primeAudio();
         if (!callStartTime) {
             callStartTime = Date.now();
             timerInterval = setInterval(updateCallTimer, 1000);
         }
-        isListening ? stopListening() : startListening();
+
+        if (isListening) {
+            // NOISE FALLBACK: Manual stop triggers processing of whatever was heard last
+            if (lastTranscript) {
+                processVoiceResult(lastTranscript);
+            } else {
+                stopListening();
+            }
+        } else {
+            startListening();
+        }
     });
 
     endCallBtn.addEventListener('click', () => {
@@ -251,7 +284,10 @@
         }, 3000);
     });
 
-    function startListening() { if (recognition && !isSantaSpeaking) recognition.start(); }
+    function startListening() {
+        lastTranscript = "";
+        if (recognition && !isSantaSpeaking) recognition.start();
+    }
 
     function stopListening() {
         isListening = false;
@@ -260,6 +296,7 @@
         if (recognition) { try { recognition.abort(); } catch(e) {} }
         statusText.textContent = 'Ready';
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
+        talkLabel.textContent = 'talk';
     }
 
     function stopEverything() {
@@ -297,12 +334,12 @@
             const audioBlob = await voiceResponse.blob();
             const audioUrl = URL.createObjectURL(audioBlob);
 
-            // USE THE GLOBAL PLAYER (Persistence)
             santaVoice.src = audioUrl;
 
             santaVoice.onended = () => {
                 isSantaSpeaking = false;
                 statusText.textContent = 'Your turn';
+                lastTranscript = ""; // Reset for next turn
                 startListening();
                 URL.revokeObjectURL(audioUrl);
             };
@@ -310,16 +347,13 @@
             santaVoice.play().then(() => {
                 statusText.textContent = 'Santa speaking';
             }).catch(error => {
-                console.error("Playback failed:", error);
-                statusText.textContent = 'Tap Screen to Listen';
-                // Final safety fallback
+                statusText.textContent = 'Tap to Listen';
                 window.addEventListener('touchstart', () => santaVoice.play(), {once: true});
             });
 
         } catch (e) {
             isSantaSpeaking = false;
             statusText.textContent = 'Error';
-            console.error(e);
         }
     }
 </script>
