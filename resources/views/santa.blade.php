@@ -178,20 +178,20 @@
     let isListening = false;
     let isSantaSpeaking = false;
     let conversationHistory = [];
-    let currentAudio = null;
     let callStartTime = null;
     let timerInterval = null;
 
-    // CRITICAL MOBILE FIX: Prime the audio engine on first interaction
-    let audioContextPrimed = false;
+    // GLOBAL AUDIO PLAYER (Persistence Fix)
+    const santaVoice = new Audio();
+    santaVoice.preload = "auto";
+
+    // "Prime" function to unlock the global audio object
     const primeAudio = () => {
-        if (audioContextPrimed) return;
-        // Create an empty, silent audio buffer and play it immediately
-        const audio = new Audio();
-        audio.play().then(() => {
-            audioContextPrimed = true;
-            console.log("Audio Engine Primed for Mobile");
-        }).catch(() => {});
+        santaVoice.play().then(() => {
+            santaVoice.pause();
+            santaVoice.currentTime = 0;
+            console.log("Global Audio Player Unlocked");
+        }).catch(e => console.log("Audio unlock pending interaction"));
     };
 
     function updateStatusTime() {
@@ -231,7 +231,7 @@
     }
 
     talkBtn.addEventListener('click', () => {
-        primeAudio(); // Attempt to prime audio every time Talk is pressed
+        primeAudio(); // Critical: Must happen inside the click event
         if (!callStartTime) {
             callStartTime = Date.now();
             timerInterval = setInterval(updateCallTimer, 1000);
@@ -265,7 +265,8 @@
     function stopEverything() {
         stopListening();
         isSantaSpeaking = false;
-        if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+        santaVoice.pause();
+        santaVoice.currentTime = 0;
     }
 
     async function getSantaResponse() {
@@ -295,26 +296,26 @@
 
             const audioBlob = await voiceResponse.blob();
             const audioUrl = URL.createObjectURL(audioBlob);
-            currentAudio = new Audio(audioUrl);
 
-            currentAudio.onended = () => {
+            // USE THE GLOBAL PLAYER (Persistence)
+            santaVoice.src = audioUrl;
+
+            santaVoice.onended = () => {
                 isSantaSpeaking = false;
                 statusText.textContent = 'Your turn';
                 startListening();
+                URL.revokeObjectURL(audioUrl);
             };
 
-            // Force play and catch errors for mobile debugging
-            const playPromise = currentAudio.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    statusText.textContent = 'Santa speaking';
-                }).catch(error => {
-                    console.error("Playback failed:", error);
-                    statusText.textContent = 'Tap to Unmute';
-                    // Fallback for strict browsers: play on next tap
-                    window.addEventListener('touchstart', () => currentAudio.play(), {once: true});
-                });
-            }
+            santaVoice.play().then(() => {
+                statusText.textContent = 'Santa speaking';
+            }).catch(error => {
+                console.error("Playback failed:", error);
+                statusText.textContent = 'Tap Screen to Listen';
+                // Final safety fallback
+                window.addEventListener('touchstart', () => santaVoice.play(), {once: true});
+            });
+
         } catch (e) {
             isSantaSpeaking = false;
             statusText.textContent = 'Error';
