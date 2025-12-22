@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Santa Claus</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -10,6 +10,8 @@
             background: #000;
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
             overflow: hidden;
+            /* Use dynamic viewport height for mobile browsers */
+            height: 100dvh;
         }
         .phone-container {
             background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
@@ -18,6 +20,8 @@
             border: 8px solid #000;
             position: relative;
             overflow: hidden;
+            /* Shifting the whole container up */
+            margin-top: -20px;
         }
         .status-bar {
             height: 44px;
@@ -117,8 +121,8 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-<div class="phone-container w-full max-w-sm mx-auto" style="height: 812px; max-height: 90vh;">
+<body class="min-h-screen flex items-start justify-center p-4">
+<div class="phone-container w-full max-w-sm mx-auto" style="height: 812px; max-height: 95vh;">
     <div class="notch"></div>
 
     <div class="status-bar flex items-center justify-between px-8 text-white text-xs font-semibold relative z-40">
@@ -138,14 +142,14 @@
         </div>
     </div>
 
-    <div class="flex flex-col items-center h-full pt-12 pb-24 px-6">
+    <div class="flex flex-col items-center h-full pt-4 pb-48 px-6">
         <div class="text-center mb-2">
             <h1 class="text-white text-3xl font-normal mb-1 tracking-tight">Santa Claus</h1>
             <p class="text-gray-400 text-base">mobile</p>
             <div class="text-gray-400 text-base mt-1" id="call-timer">00:00</div>
         </div>
 
-        <div class="relative my-6">
+        <div class="relative my-4">
             <div id="listening-ring" class="absolute inset-0 rounded-full bg-green-500 opacity-20 avatar-ring" style="display: none;"></div>
             <div id="avatar-pulse" class="w-36 h-36 rounded-full flex items-center justify-center text-7xl" style="background: linear-gradient(135deg, #E53E3E 0%, #C53030 100%);">
                 🎅
@@ -195,6 +199,7 @@
 </div>
 
 <script>
+    // Your existing script remains unchanged...
     const OPENAI_API_KEY = '{{ env('OPENAI_API_KEY') }}';
     const ELEVENLABS_API_KEY = '{{ env('ELEVENLABS_API_KEY') }}';
 
