@@ -64,13 +64,6 @@
             justify-content: center;
             box-shadow: 0 4px 15px rgba(255, 59, 48, 0.3);
         }
-        .avatar-ring {
-            animation: pulse-ring 2s ease-in-out infinite;
-        }
-        @keyframes pulse-ring {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 0.1; transform: scale(1.1); }
-        }
         .listening-pulse {
             animation: listening-pulse 1.5s ease-in-out infinite;
         }
@@ -101,7 +94,6 @@
         </div>
 
         <div class="relative my-4">
-            <div id="listening-ring" class="absolute inset-0 rounded-full bg-green-500 opacity-20 avatar-ring" style="display: none;"></div>
             <div id="avatar-pulse" class="w-32 h-32 rounded-full flex items-center justify-center text-6xl shadow-2xl" style="background: linear-gradient(135deg, #E53E3E 0%, #C53030 100%);">
                 🎅
             </div>
@@ -158,7 +150,6 @@
     const talkBtn = document.getElementById('talk-btn');
     const talkLabel = document.getElementById('talk-label');
     const statusText = document.getElementById('status-text');
-    const listeningRing = document.getElementById('listening-ring');
     const avatarPulse = document.getElementById('avatar-pulse');
     const endCallBtn = document.getElementById('end-call');
     const callTimer = document.getElementById('call-timer');
@@ -196,9 +187,9 @@
     }
 
     function initRecognition() {
-        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return;
-
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return;
+
         recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
@@ -207,7 +198,6 @@
         recognition.onstart = () => {
             isListening = true;
             currentHearsay = "";
-            listeningRing.style.display = 'block';
             avatarPulse.classList.add('listening-pulse');
             statusText.textContent = 'Listening...';
             talkBtn.classList.replace('bg-green-600', 'bg-red-600');
@@ -223,15 +213,12 @@
                     interim += event.results[i][0].transcript;
                 }
             }
-            // Constantly update the hearsay so we never lose data
-            currentHearsay = currentHearsay + interim;
+            window.lastRawSpeech = currentHearsay + interim;
         };
 
-        recognition.onerror = (e) => {
-            console.error("Speech Recognition Error:", e.error);
-            // If it errors out, just restart it silently to stay ready
+        recognition.onerror = () => {
             if (isListening) {
-                try { recognition.stop(); } catch(err) {}
+                try { recognition.abort(); } catch(err) {}
                 setTimeout(() => { if(isListening) recognition.start(); }, 300);
             }
         };
@@ -246,18 +233,22 @@
     initRecognition();
 
     function processFinalVoiceResult() {
+        // Immediate UI reset and force-kill microphone
         isListening = false;
-        try { recognition.stop(); } catch(e) {}
+        avatarPulse.classList.remove('listening-pulse');
+        talkBtn.classList.replace('bg-red-600', 'bg-green-600');
+        talkLabel.textContent = 'talk';
 
-        const textToSend = currentHearsay.trim();
+        try { recognition.abort(); } catch(e) {}
 
-        if (textToSend.length > 2) { // Minimum 2 characters to avoid background noise blips
+        // Grab the very last bit of speech we detected
+        const textToSend = (window.lastRawSpeech || "").trim();
+
+        if (textToSend.length > 1) {
             conversationHistory.push({ role: 'user', content: textToSend });
             getSantaResponse();
         } else {
-            // Safety: If it heard nothing, don't just say "Try Again" — restart listening
-            console.log("Nothing heard, restarting...");
-            startListening();
+            statusText.textContent = 'Ready';
         }
     }
 
@@ -267,12 +258,8 @@
             callStartTime = Date.now();
             timerInterval = setInterval(updateCallTimer, 1000);
         }
-
-        if (isListening) {
-            processFinalVoiceResult();
-        } else if (!isSantaSpeaking) {
-            startListening();
-        }
+        if (isListening) processFinalVoiceResult();
+        else if (!isSantaSpeaking) startListening();
     });
 
     endCallBtn.addEventListener('click', () => {
@@ -288,20 +275,18 @@
     });
 
     function startListening() {
-        currentHearsay = "";
+        window.lastRawSpeech = "";
         if (recognition) {
             try { recognition.start(); } catch(e) {
-                // If it's already started or stuck, force it
-                try { recognition.stop(); setTimeout(() => recognition.start(), 200); } catch(err) {}
+                try { recognition.abort(); setTimeout(() => recognition.start(), 200); } catch(err) {}
             }
         }
     }
 
     function stopListening() {
         isListening = false;
-        listeningRing.style.display = 'none';
         avatarPulse.classList.remove('listening-pulse');
-        if (recognition) { try { recognition.stop(); } catch(e) {} }
+        if (recognition) { try { recognition.abort(); } catch(e) {} }
         statusText.textContent = 'Ready';
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
         talkLabel.textContent = 'talk';
@@ -315,11 +300,6 @@
     }
 
     async function getSantaResponse() {
-        listeningRing.style.display = 'none';
-        avatarPulse.classList.remove('listening-pulse');
-        talkBtn.classList.replace('bg-red-600', 'bg-green-600');
-        talkLabel.textContent = 'talk';
-
         isSantaSpeaking = true;
         statusText.textContent = 'Santa thinking...';
 
@@ -345,24 +325,22 @@
 
             const audioBlob = await voiceResponse.blob();
             const audioUrl = URL.createObjectURL(audioBlob);
-
             santaVoice.src = audioUrl;
 
             santaVoice.onended = () => {
                 isSantaSpeaking = false;
                 statusText.textContent = 'Your turn';
-                currentHearsay = "";
+                window.lastRawSpeech = "";
                 startListening();
                 URL.revokeObjectURL(audioUrl);
             };
 
             santaVoice.play().then(() => {
                 statusText.textContent = 'Santa speaking';
-            }).catch(error => {
+            }).catch(() => {
                 statusText.textContent = 'Tap to Listen';
                 window.addEventListener('touchstart', () => santaVoice.play(), {once: true});
             });
-
         } catch (e) {
             isSantaSpeaking = false;
             statusText.textContent = 'Error';
