@@ -156,12 +156,14 @@
     const statusTime = document.getElementById('status-time');
     const endCallBtn = document.getElementById('end-call');
 
-    let recognition;
-    let isListening = false;
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
     let isSantaSpeaking = false;
     let conversationHistory = [];
     let callStartTime = null;
     let timerInterval = null;
+    let mediaStream = null;
 
     const santaVoice = new Audio();
     santaVoice.preload = "auto";
@@ -178,7 +180,12 @@
         }
     };
 
-    document.addEventListener('touchstart', primeAudio, { once: true });
+    document.addEventListener('touchstart', () => {
+        primeAudio();
+        if (!mediaStream) {
+            initMicrophone();
+        }
+    }, { once: true });
 
     function updateStatusTime() {
         const now = new Date();
@@ -193,82 +200,108 @@
         }
     }
 
-    function initRecognition() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return;
-
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-
-        recognition.onstart = () => {
-            isListening = true;
-            window.latestCapturedText = "";
-            avatarPulse.classList.add('listening-pulse');
-            statusText.textContent = 'Listening...';
-            talkBtn.classList.replace('bg-green-600', 'bg-red-600');
-            talkLabel.textContent = 'release';
-            subStatus.textContent = "Listening...";
-        };
-
-        recognition.onresult = (event) => {
-            let fullTranscript = "";
-            for (let i = 0; i < event.results.length; ++i) {
-                fullTranscript += event.results[i][0].transcript;
-            }
-            window.latestCapturedText = fullTranscript;
-            subStatus.textContent = "Heard: " + fullTranscript.split(" ").slice(-3).join(" ");
-        };
-
-        recognition.onerror = (e) => {
-            console.log("Recognition error:", e.error);
-        };
-
-        recognition.onend = () => {
-            if (isListening) {
-                processFinalVoiceResult();
-            }
-        };
+    async function initMicrophone() {
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            statusText.textContent = 'Hold to Talk';
+            subStatus.textContent = 'Microphone ready!';
+        } catch (error) {
+            statusText.textContent = 'Mic Access Needed';
+            subStatus.textContent = 'Please allow microphone access';
+        }
     }
 
-    initRecognition();
-
-    function processFinalVoiceResult() {
-        isListening = false;
+    async function processRecordedAudio() {
+        isRecording = false;
         avatarPulse.classList.remove('listening-pulse');
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
         talkLabel.textContent = 'hold';
 
-        try { recognition.abort(); } catch(e) {}
-
-        const textToSend = (window.latestCapturedText || "").trim();
-
-        if (textToSend.length > 1) {
-            conversationHistory.push({ role: 'user', content: textToSend });
-            getSantaResponse();
-        } else {
+        if (audioChunks.length === 0) {
             statusText.textContent = 'Hold to Talk';
-            subStatus.textContent = "Nothing heard, try again!";
+            subStatus.textContent = "No audio recorded";
+            return;
+        }
+
+        statusText.textContent = 'Processing...';
+        subStatus.textContent = 'Transcribing audio...';
+
+        try {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            audioChunks = [];
+
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'audio.webm');
+            formData.append('model', 'whisper-1');
+
+            const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+                body: formData
+            });
+
+            const transcription = await transcriptionResponse.json();
+            const textToSend = transcription.text?.trim() || "";
+
+            if (textToSend.length > 1) {
+                conversationHistory.push({ role: 'user', content: textToSend });
+                getSantaResponse();
+            } else {
+                statusText.textContent = 'Hold to Talk';
+                subStatus.textContent = "Nothing heard, try again!";
+            }
+        } catch (error) {
+            console.error('Transcription error:', error);
+            statusText.textContent = 'Hold to Talk';
+            subStatus.textContent = "Error - please try again";
         }
     }
 
-    const startTalking = () => {
+    const startTalking = async () => {
         primeAudio();
         if (!callStartTime) {
             callStartTime = Date.now();
             timerInterval = setInterval(updateCallTimer, 1000);
         }
-        if (!isSantaSpeaking && !isListening) {
-            startListening();
+
+        if (!mediaStream) {
+            await initMicrophone();
+            if (!mediaStream) return;
+        }
+
+        if (!isSantaSpeaking && !isRecording) {
+            startRecording();
         }
     };
 
     const stopTalking = () => {
-        if (isListening) {
-            try { recognition.stop(); } catch(e) {}
+        if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
         }
     };
+
+    function startRecording() {
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(mediaStream);
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            processRecordedAudio();
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        avatarPulse.classList.add('listening-pulse');
+        statusText.textContent = 'Listening...';
+        talkBtn.classList.replace('bg-green-600', 'bg-red-600');
+        talkLabel.textContent = 'release';
+        subStatus.textContent = "Recording...";
+    }
 
     talkBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
@@ -296,7 +329,7 @@
     });
 
     talkBtn.addEventListener('mouseleave', () => {
-        if (isListening) {
+        if (isRecording) {
             stopTalking();
         }
     });
@@ -315,37 +348,23 @@
         }, 3000);
     });
 
-    function startListening() {
-        window.latestCapturedText = "";
-        if (recognition) {
-            try {
-                recognition.abort();
-            } catch(e) {}
-
-            setTimeout(() => {
-                try {
-                    recognition.start();
-                } catch(e) {
-                    console.log('Start failed, retrying:', e);
-                }
-            }, 100);
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
         }
-    }
-
-    function stopListening() {
-        isListening = false;
+        isRecording = false;
         avatarPulse.classList.remove('listening-pulse');
-        if (recognition) { try { recognition.abort(); } catch(e) {} }
         statusText.textContent = 'Hold to Talk';
         talkBtn.classList.replace('bg-red-600', 'bg-green-600');
         talkLabel.textContent = 'hold';
     }
 
     function stopEverything() {
-        stopListening();
+        stopRecording();
         isSantaSpeaking = false;
         santaVoice.pause();
         santaVoice.currentTime = 0;
+        audioChunks = [];
     }
 
     async function getSantaResponse() {
