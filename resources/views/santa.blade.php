@@ -154,6 +154,7 @@
     const avatarPulse = document.getElementById('avatar-pulse');
     const callTimer = document.getElementById('call-timer');
     const statusTime = document.getElementById('status-time');
+    const endCallBtn = document.getElementById('end-call');
 
     let recognition;
     let isListening = false;
@@ -161,17 +162,23 @@
     let conversationHistory = [];
     let callStartTime = null;
     let timerInterval = null;
-    let currentHearsay = "";
 
     const santaVoice = new Audio();
     santaVoice.preload = "auto";
 
+    let audioUnlocked = false;
+
     const primeAudio = () => {
-        santaVoice.play().then(() => {
-            santaVoice.pause();
-            santaVoice.currentTime = 0;
-        }).catch(() => {});
+        if (!audioUnlocked) {
+            santaVoice.play().then(() => {
+                santaVoice.pause();
+                santaVoice.currentTime = 0;
+                audioUnlocked = true;
+            }).catch(() => {});
+        }
     };
+
+    document.addEventListener('touchstart', primeAudio, { once: true });
 
     function updateStatusTime() {
         const now = new Date();
@@ -197,8 +204,9 @@
 
         recognition.onstart = () => {
             isListening = true;
-            currentHearsay = "";
-            window.latestCapturedText = "";
+            if (!window.latestCapturedText) {
+                window.latestCapturedText = "";
+            }
             avatarPulse.classList.add('listening-pulse');
             statusText.textContent = 'Listening...';
             talkBtn.classList.replace('bg-green-600', 'bg-red-600');
@@ -207,14 +215,12 @@
         };
 
         recognition.onresult = (event) => {
-            let final = "";
-            let interim = "";
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) final += event.results[i][0].transcript;
-                else interim += event.results[i][0].transcript;
+            let fullTranscript = "";
+            for (let i = 0; i < event.results.length; ++i) {
+                fullTranscript += event.results[i][0].transcript;
             }
-            window.latestCapturedText = final + interim;
-            subStatus.textContent = "Heard: " + window.latestCapturedText.split(" ").slice(-3).join(" ");
+            window.latestCapturedText = fullTranscript;
+            subStatus.textContent = "Heard: " + fullTranscript.split(" ").slice(-3).join(" ");
         };
 
         recognition.onerror = (e) => {
