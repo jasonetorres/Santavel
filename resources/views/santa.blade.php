@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=0">
-    <title>Santa Claus</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Call Santa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -107,34 +108,34 @@
         <div class="flex flex-col items-center w-full mt-auto">
             <div class="grid grid-cols-3 gap-x-8 gap-y-6 mb-8 w-full max-w-xs px-2">
                 <div class="flex flex-col items-center">
-                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path></svg></button>
+                    <button class="call-btn" type="button" tabindex="-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">mute</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="white"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="12" cy="20" r="2"/><circle cx="20" cy="20" r="2"/></svg></button>
+                    <button class="call-btn" type="button" tabindex="-1"><svg width="22" height="22" viewBox="0 0 24 24" fill="white"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="12" cy="20" r="2"/><circle cx="20" cy="20" r="2"/></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">keypad</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                    <button class="call-btn" type="button" tabindex="-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">speaker</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                    <button class="call-btn" type="button" tabindex="-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">add call</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button id="talk-btn" class="call-btn bg-green-600 border-none">
+                    <button id="talk-btn" class="call-btn bg-green-600 border-none" type="button">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
                     </button>
                     <span id="talk-label" class="text-white text-[10px] mt-1 font-medium">hold</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <button class="call-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
+                    <button class="call-btn" type="button" tabindex="-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
                     <span class="text-white text-[10px] mt-1 font-medium">contacts</span>
                 </div>
             </div>
 
-            <button id="end-call" class="end-call-btn">
+            <button id="end-call" class="end-call-btn" type="button">
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="white" transform="rotate(135)">
                     <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
                 </svg>
@@ -144,9 +145,6 @@
 </div>
 
 <script>
-    const OPENAI_API_KEY = '{{ env('OPENAI_API_KEY') }}';
-    const ELEVENLABS_API_KEY = '{{ env('ELEVENLABS_API_KEY') }}';
-
     const talkBtn = document.getElementById('talk-btn');
     const talkLabel = document.getElementById('talk-label');
     const statusText = document.getElementById('status-text');
@@ -164,7 +162,6 @@
     let callStartTime = null;
     let timerInterval = null;
     let mediaStream = null;
-    let recordingStartTime = null;
 
     const santaVoice = new Audio();
     santaVoice.preload = "auto";
@@ -196,6 +193,12 @@
         }
     }
 
+    function setTalking(talking) {
+        talkBtn.classList.toggle('bg-red-600', talking);
+        talkBtn.classList.toggle('bg-green-600', !talking);
+        talkLabel.textContent = talking ? 'release' : 'hold';
+    }
+
     function cleanupMediaRecorder() {
         if (mediaRecorder) {
             try {
@@ -212,6 +215,30 @@
             mediaStream.getTracks().forEach(track => track.stop());
             mediaStream = null;
         }
+    }
+
+    async function santaFetch(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        headers.set('Accept', 'application/json');
+        headers.set('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').content);
+
+        if (!(options.body instanceof FormData) && !headers.has('Content-Type')) {
+            headers.set('Content-Type', 'application/json');
+        }
+
+        const response = await fetch(url, {
+            ...options,
+            headers,
+            credentials: 'same-origin',
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Santa could not answer');
+        }
+
+        return data;
     }
 
     async function initMicrophone() {
@@ -240,8 +267,7 @@
     async function processRecordedAudio() {
         isRecording = false;
         avatarPulse.classList.remove('listening-pulse');
-        talkBtn.classList.replace('bg-red-600', 'bg-green-600');
-        talkLabel.textContent = 'hold';
+        setTalking(false);
 
         cleanupMediaRecorder();
 
@@ -259,22 +285,24 @@
             const audioBlob = new Blob(audioChunks, { type: mimeType });
             audioChunks = [];
 
+            const extension = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
             const formData = new FormData();
-            formData.append('file', audioBlob, 'audio.' + (mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm'));
-            formData.append('model', 'whisper-1');
+            formData.append('file', audioBlob, 'audio.' + extension);
 
-            const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+            const transcription = await santaFetch('/santa/transcribe', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` },
-                body: formData
+                body: formData,
             });
-
-            const transcription = await transcriptionResponse.json();
             const textToSend = transcription.text?.trim() || "";
 
             if (textToSend.length > 1) {
                 conversationHistory.push({ role: 'user', content: textToSend });
-                getSantaResponse();
+                try {
+                    await getSantaResponse();
+                } catch (error) {
+                    conversationHistory.pop();
+                    throw error;
+                }
             } else {
                 statusText.textContent = 'Hold to Talk';
                 subStatus.textContent = "Nothing heard, try again!";
@@ -282,7 +310,7 @@
         } catch (error) {
             console.error('Transcription error:', error);
             statusText.textContent = 'Hold to Talk';
-            subStatus.textContent = "Error - please try again";
+            subStatus.textContent = error.message || "Error - please try again";
         }
     }
 
@@ -350,8 +378,7 @@
             isRecording = true;
             avatarPulse.classList.add('listening-pulse');
             statusText.textContent = 'Listening...';
-            talkBtn.classList.replace('bg-green-600', 'bg-red-600');
-            talkLabel.textContent = 'release';
+            setTalking(true);
             subStatus.textContent = "Recording...";
         } catch (error) {
             console.error('Error starting recorder:', error);
@@ -406,17 +433,6 @@
         }, 3000);
     });
 
-    function stopRecording() {
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
-        }
-        isRecording = false;
-        avatarPulse.classList.remove('listening-pulse');
-        statusText.textContent = 'Hold to Talk';
-        talkBtn.classList.replace('bg-red-600', 'bg-green-600');
-        talkLabel.textContent = 'hold';
-    }
-
     function stopEverything() {
         cleanupMediaRecorder();
         isRecording = false;
@@ -425,8 +441,7 @@
         santaVoice.currentTime = 0;
         audioChunks = [];
         avatarPulse.classList.remove('listening-pulse');
-        talkBtn.classList.replace('bg-red-600', 'bg-green-600');
-        talkLabel.textContent = 'hold';
+        setTalking(false);
     }
 
     async function getSantaResponse() {
@@ -434,46 +449,31 @@
         statusText.textContent = 'Santa thinking...';
         subStatus.textContent = "Checking list...";
 
-        try {
-            const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
-                    messages: [{ role: 'system', content: `You are Santa. Warm, jolly, 2 sentences max. End with a question.` }, ...conversationHistory]
-                })
-            });
+        const data = await santaFetch('/santa/reply', {
+            method: 'POST',
+            body: JSON.stringify({ messages: conversationHistory }),
+        });
 
-            const aiData = await aiResponse.json();
-            const santaText = aiData.choices[0].message.content;
-            conversationHistory.push({ role: 'assistant', content: santaText });
+        const santaText = data.text;
+        conversationHistory.push({ role: 'assistant', content: santaText });
 
-            const voiceResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/1wg2wOjdEWKA7yQD8Kca`, {
-                method: 'POST',
-                headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: santaText, model_id: 'eleven_turbo_v2_5' })
-            });
+        santaVoice.src = `data:audio/mpeg;base64,${data.audio}`;
 
-            const audioBlob = await voiceResponse.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
-            santaVoice.src = audioUrl;
-
-            santaVoice.onended = () => {
-                isSantaSpeaking = false;
-                URL.revokeObjectURL(audioUrl);
-                statusText.textContent = 'Hold to Talk';
-                subStatus.textContent = 'Ready for your reply';
-            };
-
-            santaVoice.play().then(() => {
-                statusText.textContent = 'Santa speaking';
-            }).catch(() => {
-                statusText.textContent = 'Tap to Listen';
-                window.addEventListener('touchstart', () => santaVoice.play(), {once: true});
-            });
-        } catch (e) {
+        santaVoice.onended = () => {
             isSantaSpeaking = false;
-            statusText.textContent = 'Error';
+            santaVoice.removeAttribute('src');
+            statusText.textContent = 'Hold to Talk';
+            subStatus.textContent = 'Ready for your reply';
+        };
+
+        try {
+            await santaVoice.play();
+            statusText.textContent = 'Santa speaking';
+            subStatus.textContent = santaText;
+        } catch (error) {
+            statusText.textContent = 'Tap to Listen';
+            subStatus.textContent = santaText;
+            window.addEventListener('touchstart', () => santaVoice.play(), { once: true });
         }
     }
 </script>
