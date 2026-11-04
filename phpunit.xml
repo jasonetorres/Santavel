@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_KEY" value="base64:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE="/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_URL" value=""/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="OPENAI_API_KEY" value="test-openai-key"/>
+        <env name="OPENAI_CHAT_MODEL" value="gpt-5.6-terra"/>
+        <env name="OPENAI_TRANSCRIBE_MODEL" value="gpt-transcribe"/>
+        <env name="ELEVENLABS_API_KEY" value="test-eleven-key"/>
+        <env name="ELEVENLABS_VOICE_ID" value="1wg2wOjdEWKA7yQD8Kca"/>
+        <env name="ELEVENLABS_MODEL" value="eleven_flash_v2_5"/>
+        <env name="SANTA_WISH_WEBHOOK_SECRET" value="test-wish-secret"/>
+    </php>
+</phpunit>
